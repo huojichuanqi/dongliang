@@ -8,8 +8,7 @@ from typing import Dict, Optional, Tuple
 # ==================== 配置 ====================
 API_KEY = ""
 API_SECRET = ""
-LEVERAGE = 1
-POSITION_PERCENT = 1
+LEVERAGE = 0.0001
 UPDATE_INTERVAL = 900
 TOP_MOVERS_URL = "https://www.binance.com/fapi/v1/topMovers"
 COOLDOWN_SEC = 10  # 重复追单冷却 秒
@@ -32,7 +31,7 @@ class PureExchangeDataStrategy:
         self.exchange.load_markets()
         self._enable_hedge_mode()
         # ...其他初始化代码...
-        self.blacklist = ['AAAA']  # 新增黑名单列表
+        self.blacklist = ['XNY']  # 新增黑名单列表
         self.allow_usdc = False  # 是否允许USDC交易对
 
     def _enable_hedge_mode(self):
@@ -135,6 +134,7 @@ class PureExchangeDataStrategy:
                         amount=float(pos['contracts']),
                         params={
                             'positionSide': 'LONG' if side == 'long' else 'SHORT',
+                            'newClientOrderId': 'x-TBzTen1X',
                             # 'reduceOnly': True  # 确保是平仓单
                         }
                     )
@@ -161,10 +161,10 @@ class PureExchangeDataStrategy:
         # 获取余额和价格
         balance = float(self.exchange.fetch_balance()['USDT']['total'])
         price = self.exchange.fetch_ticker(formatted_symbol)['last']
-        print(balance)
+        print(f"账户权益：{balance}")
 
         # 计算下单量
-        amount = (balance * POSITION_PERCENT * LEVERAGE) / price
+        amount = (balance * LEVERAGE) / price
         # print(amount)
         amount = float(self.exchange.amount_to_precision(formatted_symbol, amount))
         # print(amount)
@@ -177,7 +177,7 @@ class PureExchangeDataStrategy:
                 type="market",
                 side="buy" if side == "long" else "sell",
                 amount=amount,
-                params={"positionSide": "LONG" if side == "long" else "SHORT"}
+                params={'newClientOrderId': 'x-TBzTen1X', "positionSide": "LONG" if side == "long" else "SHORT"}
             )
             logger.info(f"已开仓 {formatted_symbol} {side}")
         except Exception as e:
